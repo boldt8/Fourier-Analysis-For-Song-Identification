@@ -1,0 +1,11 @@
+{
+  "name": "larp-audio-fingerprint-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch server.js",
+    "start": "bun server.js",
+    "catalog:build": "bun scripts/build-catalog.js",
+    "test": "bun test"
+  }
+}

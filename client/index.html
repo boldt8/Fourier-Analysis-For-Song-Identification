@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shazam Demo</title>
+    <link rel="stylesheet" href="/client/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Linear Algebra + Audio Fingerprinting</p>
+	  <h1>Shazam Demo</h1>
+          <p class="lede">
+            Record a short clip, then walk through the matrix-style signal pipeline:
+            framing, windowing, Fourier projection, spectrogram sparsification, and
+            landmark hashes.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <p class="panel-label">Capture Status</p>
+          <p id="statusText" class="status-text">Awaiting your first clip.</p>
+          <div class="status-row">
+            <span class="status-chip">Mic or Demo</span>
+            <span id="timerValue" class="status-timer">Idle</span>
+          </div>
+          <div class="button-row">
+            <button id="startButton" class="primary-button">Start 8s Recording</button>
+            <button id="stopButton" class="secondary-button" disabled>Stop</button>
+            <button id="demoButton" class="secondary-button">Load Demo Signal</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="summary-grid">
+        <article class="stat-card">
+          <p class="stat-label">Working Rate</p>
+          <p id="sampleRateValue" class="stat-value">11025 Hz</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Clip Length</p>
+          <p id="durationValue" class="stat-value">0.0 s</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Frames</p>
+          <p id="frameCountValue" class="stat-value">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Sparse Peaks</p>
+          <p id="peakCountValue" class="stat-value">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Landmarks</p>
+          <p id="landmarkCountValue" class="stat-value">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Analysis Time</p>
+          <p id="runtimeValue" class="stat-value">0 ms</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Source</p>
+          <p id="sourceValue" class="stat-value">Awaiting capture</p>
+        </article>
+      </section>
+
+      <section class="control-strip">
+        <div class="slider-group">
+          <label for="frameSlider">Selected Frame</label>
+          <input id="frameSlider" type="range" min="0" max="0" value="0" disabled />
+          <span>Frame <strong id="frameLabel">0</strong></span>
+        </div>
+        <div class="slider-group">
+          <label for="teachingBinSlider">Teaching DFT Bin</label>
+          <input id="teachingBinSlider" type="range" min="1" max="12" value="3" />
+          <span>Bin <strong id="teachingBinLabel">3</strong></span>
+        </div>
+      </section>
+
+      <section class="analysis-grid">
+        <article class="analysis-card span-two">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">1. Signal As Vector</p>
+              <h2>Waveform Overview</h2>
+            </div>
+            <p class="formula">x ∈ ℝ<sup>N</sup></p>
+          </div>
+          <canvas id="waveformCanvas"></canvas>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">2. Frame Selection</p>
+              <h2>Sliding Window</h2>
+            </div>
+            <p class="formula">x<sub>t</sub> = S<sub>t</sub>x</p>
+          </div>
+          <canvas id="frameCanvas"></canvas>
+          <p id="frameInfo" class="panel-note"></p>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">3. Windowing</p>
+              <h2>Hann Taper</h2>
+            </div>
+            <p class="formula">y<sub>t</sub> = Hx<sub>t</sub></p>
+          </div>
+          <canvas id="windowCanvas"></canvas>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">4. Runtime FFT</p>
+              <h2>Magnitude Spectrum</h2>
+            </div>
+            <p class="formula">|F y<sub>t</sub>|</p>
+          </div>
+          <canvas id="spectrumCanvas"></canvas>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">5. Teaching View</p>
+              <h2>DFT Basis Projection</h2>
+            </div>
+            <p class="formula">X[k] = Σ x[n]e<sup>-i2πkn/N</sup></p>
+          </div>
+          <canvas id="teachingCanvas"></canvas>
+          <p id="teachingInfo" class="panel-note"></p>
+        </article>
+
+        <article class="analysis-card span-two">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">6. Spectrogram Matrix</p>
+              <h2>Time-Frequency Heatmap</h2>
+            </div>
+            <p class="formula">S ∈ ℝ<sup>F×T</sup></p>
+          </div>
+          <canvas id="spectrogramCanvas"></canvas>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">7. Sparsification</p>
+              <h2>Local Peaks</h2>
+            </div>
+            <p class="formula">P = {(f, t)}</p>
+          </div>
+          <canvas id="peaksCanvas"></canvas>
+          <p id="peakInfo" class="panel-note"></p>
+        </article>
+
+        <article class="analysis-card">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">8. Landmark Hashes</p>
+              <h2>Anchor-Target Pairs</h2>
+            </div>
+            <p class="formula">(f₁, f₂, Δt)</p>
+          </div>
+          <canvas id="landmarksCanvas"></canvas>
+        </article>
+
+        <article class="analysis-card span-two">
+          <div class="card-header">
+            <div>
+              <p class="panel-label">9. Match Stage</p>
+              <h2>Offset Voting Placeholder</h2>
+            </div>
+            <p class="formula">arg max votes(track, offset)</p>
+          </div>
+          <canvas id="matchCanvas"></canvas>
+          <p id="matchInfo" class="panel-note"></p>
+        </article>
+      </section>
+    </div>
+
+    <script type="module" src="/client/app.js"></script>
+  </body>
+</html>
